@@ -1,1 +1,24 @@
-#v
+pacman::p_load(dplyr, ggplot2, data.table, gridExtra)
+
+# carregar dados covid19 Bahia
+covid19BA <- fread('https://ftp.sei.ba.gov.br/covid19/informacoes_covid_municipios_BA.csv')
+
+# agrupar casos por município ajustando variáveis
+covid19BAMun <- covid19BA %>% mutate(casos2 = sqrt(CASO_TOTAL), casosLog = log10(CASO_TOTAL))
+
+covid19BAMun <- covid19BAMun %>%
+  select(NM_MUNICIP2, CASO_TOTAL, casos2, casosLog) %>%
+  group_by(NM_MUNICIP2)
+
+
+# criar loop para os diferentes gráficoss
+nomeVar <- names(covid19BAMun)[2:4] # passar nomes das vars para vetor
+listaPlots <- NULL
+
+for(i in nomeVar) {
+  plot <- covid19BAMun %>% ggplot(aes_string(x = 'NM_MUNICIP2', y=i)) + geom_bar(stat = "identity") + labs(x = "NM_MUNICIP2")
+  listaPlots[[length(listaPlots) + 1]] <-plot
+} # criar lista com os plots
+
+# printar todos os plots, lado a lado
+grid.arrange(listaPlots[[1]], listaPlots[[2]], listaPlots[[3]], ncol=3)
