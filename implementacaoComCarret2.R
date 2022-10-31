@@ -1,72 +1,50 @@
-# carrega a base
-residos <- read.csv2('http://dados.recife.pe.gov.br/dataset/2bc56ecf-4716-449e-9c72-1241f090c6d9/resource/41a65b6d-1e31-4084-9d6b-1f50bfd004e5/download/pesagens2016.csv')
+pacman::p_load(tidyverse, rsample, dplyr, ggplot2, rpart, rpart.plot, caret, ade4, car, caret, corrplot, data.table, dplyr, forcats, funModeling, ggplot2, mlbench, mltools, randomForest, rattle, tidyverse)
 
-# carrega pacotes 
-pacman::p_load(ade4, arules, car, caret, corrplot, data.table, dplyr, e1071, forcats, funModeling, ggplot2, mlbench, mltools, randomForest, rattle, tidyverse)
+view(mpg)
 
-# seleciona as colunas de interesse
-residos2 <- residos %>%
-  select(LOCDESCARREGO_DESC, PES_PESOUTIL, COLETA_DES)
+mpg2 <- mpg %>%
+  select( cyl, hwy, displ, class)
 
-residos_D <- acm.disjonctif(as.data.frame(residos2$LOCDESCARREGO_DESC))
-residos_D2 <- acm.disjonctif(as.data.frame(residos2$COLETA_DES))
+# Treino e Teste: Pré-processamento
+particaoMpg2 = createDataPartition(mpg2$hwy, p=.7, list = F) # cria a partição 70-30
+treinoMpg2 = mpg2[particaoMpg2, ] # treino
+testeMpg2 = mpg2[-particaoMpg2, ] # - treino = teste
 
-residos3 <- cbind(residos2, residos_D)
-residos4 <- cbind(residos3, residos_D2)
+# Validação Cruzada: Pré-processamento
+# Controle de treinamento
+train.control <- trainControl(method = "cv", number = 10, verboseIter = T)
 
-## Aprendizagem de maquina
+# Treinamentos
+## Regressão Linear
+MPG_LM <- train(hwy ~ cyl + displ + class, data = train,, method = "lm", trControl = train.control)
+summary(MPG_LM) # sumário do modelo linear
+plot(varImp(MPG_LM))
 
-# visualizacao estatistica
-status(residos4) 
-freq(residos4) 
-plot_num(residos4)
-profiling_num(residos4)
+## Árvore de Decisão
+MPG_RPART <- train(hwy ~ cyl + displ + class, data = train, method = "rpart", trControl = train.control)
 
-# Treino e Teste
-particaoResidos = createDataPartition(residos4$PES_PESOUTIL, p=.7, list = F)
-treinoResidos = residos4[particaoResidos, ] 
-testeResidos = residos4[-particaoResidos, ]
+summary(CAR_RPART)
+fancyRpartPlot(CAR_RPART$finalModel) # desenho da árvore
+plot(varImp(CAR_RPART)) # importância das variáveis
 
-# ValidaÃ§Ã£o Cruzada
-train.control <- trainControl(method = "cv", number = 10, verboseIter = T) 
+# Bagging com Floresta Aleatória
+MPG_RF <- train(hwy ~ cyl + displ + class, data = train, method = "cforest", trControl = train.control)
 
-# RegressÃ£o Linear
-RESIDOS_LM <- train(PES_PESOUTIL ~ LOCDESCARREGO_DESC +
-                   COLETA_DES, data = treinoResidos,
-                   method = "lm", trControl = train.control)
-summary(RESIDOS_LM) 
-plot(varImp(RESIDOS_LM))
-
-# arvore de decisao
-RESIDOS_RPART <- train(PES_PESOUTIL ~ LOCDESCARREGO_DESC +
-                       COLETA_DES, data = treinoResidos, method = "rpart", 
-                       trControl = train.control)
-summary(RESIDOS_RPART)
-fancyRpartPlot(RESIDOS_RPART$finalModel) 
-plot(varImp(RESIDOS_RPART)) 
-
-# Bagging com Floresta Aleatoria
-RESIDOS_RF <- train(PES_PESOUTIL ~ LOCDESCARREGO_DESC +
-                    COLETA_DES, data = treinoResidos, method = "cforest", 
-                    trControl = train.control)
-
-plot(RESIDOS_RF) 
-plot(varImp(RESIDOS_RF)) 
+plot(MPG_RF) # evolução do modelo
+plot(varImp(MPG_RF)) # plot de importância
 
 # Boosting com Boosted Generalized Linear Model
-RESIDOS_ADA <- train(PES_PESOUTIL ~ LOCDESCARREGO_DESC +
-                     COLETA_DES, data = treinoResidos, method = "glmboost", 
-                     trControl = train.control)
+MPG_ADA <- train(hwy ~ cyl + displ + class, data = train, method = "glmboost", trControl = train.control)
 
-plot(RESIDOS_ADA) 
-print(RESIDOS_ADA) 
-summary(RESIDOS_ADA) 
+plot(MPG_ADA) # evolução do modelo
+print(MPG_ADA) # modelo
+summary(MPG_ADA) # sumário
 
-melhor_modelo <- resamples(list(LM = RESIDOS_LM, RPART = RESIDOS_RPART))
+melhor_modelo <- resamples(list(LM = MPG_LM, RPART = MPG_RPART, RF = MPG_RF, ADABOOST = MPG_ADA))
 melhor_modelo
 
 summary(melhor_modelo)
 
-predVals <- extractPrediction(list(RESIDOS_LM), testX = testeResidos[, c(1,3)], testY = testeResidos$PES_PESOUTIL) 
+predVals <- extractPrediction(list(MPG_RF), testX = testeMpg2[, c(1,3,4)], testY = testeMpg2$hwy) 
 
 plotObsVsPred(predVals)
