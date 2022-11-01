@@ -16,25 +16,25 @@ train.control <- trainControl(method = "cv", number = 10, verboseIter = T)
 
 # Treinamentos
 ## Regressão Linear
-MPG_LM <- train(hwy ~ cyl + displ + class, data = train,, method = "lm", trControl = train.control)
+MPG_LM <- train(hwy ~ cyl + displ + class, data = treinoMpg2, method = "lm", trControl = train.control)
 summary(MPG_LM) # sumário do modelo linear
 plot(varImp(MPG_LM))
 
 ## Árvore de Decisão
-MPG_RPART <- train(hwy ~ cyl + displ + class, data = train, method = "rpart", trControl = train.control)
+MPG_RPART <- train(hwy ~ cyl + displ + class, data = treinoMpg2, method = "rpart", trControl = train.control)
 
-summary(CAR_RPART)
-fancyRpartPlot(CAR_RPART$finalModel) # desenho da árvore
-plot(varImp(CAR_RPART)) # importância das variáveis
+summary(MPG_RPART)
+fancyRpartPlot(MPG_RPART$finalModel) # desenho da árvore
+plot(varImp(MPG_RPART)) # importância das variáveis
 
 # Bagging com Floresta Aleatória
-MPG_RF <- train(hwy ~ cyl + displ + class, data = train, method = "cforest", trControl = train.control)
+MPG_RF <- train(hwy ~ cyl + displ + class, data = treinoMpg2, method = "cforest", trControl = train.control)
 
 plot(MPG_RF) # evolução do modelo
 plot(varImp(MPG_RF)) # plot de importância
 
 # Boosting com Boosted Generalized Linear Model
-MPG_ADA <- train(hwy ~ cyl + displ + class, data = train, method = "glmboost", trControl = train.control)
+MPG_ADA <- train(hwy ~ cyl + displ + class, data = treinoMpg2, method = "glmboost", trControl = train.control)
 
 plot(MPG_ADA) # evolução do modelo
 print(MPG_ADA) # modelo
