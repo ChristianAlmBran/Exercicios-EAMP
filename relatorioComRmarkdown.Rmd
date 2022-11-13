@@ -1,0 +1,28 @@
+---
+title: "Relatório com Rmarkdown"
+author: "Christian de Almeida Brandao"
+date: "2022-11-13"
+output: html_document
+---
+```{r setup, include=FALSE}
+# carregar as bibliotecas
+pacman::p_load(cluster, ggplot2, plotly)
+# Agrupamento com kmeans
+cls <- kmeans(x = USArrests, centers = 3) # aprendizagem ns
+USArrests$cluster <- as.factor(cls$cluster) # passamos os clusters para a base original
+head(USArrests)
+```
+
+# Agrupamento dos dados 'USArrests'
+## K-means
+
+Abaixo, você encontra o agrupamento da base de dados USArrests, usando a técnica de k-means.
+
+```{r iriscluster, echo=FALSE, warning=FALSE, message=FALSE}
+grafico1 <- ggplot() +
+  geom_point(data = USArrests, mapping = aes(x = Rape, y = Assault, colour = cluster)) + 
+  geom_point(mapping = aes_string(x = cls$centers[ , "Rape"], y = cls$centers[ , "Assault"]), color = "red", size = 4) +
+  geom_text(mapping = aes_string(x = cls$centers[ , "Rape"], y = cls$centers[ , "Assault"], label = 1:3), color = "white", size = 2) +
+  theme_light()
+ggplotly(grafico1)
+```
